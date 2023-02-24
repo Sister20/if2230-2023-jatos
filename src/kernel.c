@@ -21,6 +21,6 @@ void kernel_setup(void) {
     framebuffer_write(3, 18, 't', 0, 0xF);
     framebuffer_write(3, 19, 'o', 0, 0xF);
     framebuffer_write(3, 20, 's', 0, 0xF);
-    framebuffer_set_cursor(3, 10);
+    framebuffer_set_cursor(3, 20);
     while (TRUE);
 }

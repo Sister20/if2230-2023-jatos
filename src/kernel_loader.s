@@ -35,11 +35,11 @@ enter_protected_mode:
     cli
     mov  eax, [esp+4]
     ; Load GDT from GDTDescriptor
-    lgdt [global_descriptor_table]
+    lgdt [eax]
 
     mov  eax, cr0
     ; Set bit-0 (Protection Enable bit-flag) in Control Register 0 (CR0)
-    or eax, 1
+    or   eax, 1
     mov  cr0, eax
 
     ; Far jump to update cs register

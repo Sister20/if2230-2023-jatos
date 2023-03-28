@@ -47,3 +47,4 @@ iso: kernel
 	@cp $(SOURCE_FOLDER)/menu.lst   $(OUTPUT_FOLDER)/iso/boot/grub/
 	@genisoimage -R -b boot/grub/grub1 -no-emul-boot -boot-load-size 4 -A os -input-charset utf8 -quiet -boot-info-table -o OS2023.iso bin/iso
 	@rm -r $(OUTPUT_FOLDER)/iso/
+	@qemu-system-i386 -s -cdrom OS2023.iso 

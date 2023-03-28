@@ -51,7 +51,28 @@ void keyboard_isr(void) {
         char     mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
 
         // TODO : Implement scancode processing
-        if (mapped_char != 0) {
+        
+
+        // handle backspace
+        if (mapped_char == '\b') {
+          if (cursor_y > 0) {
+
+            framebuffer_write(cursor_x, cursor_y-1, 0, 0, 0);
+            cursor_y--;
+          }
+        }
+
+        // handle enter
+        else if (mapped_char == '\n') {
+            keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = 0;
+            keyboard_state.buffer_index = 0;
+            keyboard_state.keyboard_input_on = FALSE;
+            framebuffer_write(cursor_x, cursor_y, 0, 0, 0);
+            cursor_y = 0;
+            cursor_x++;
+        }
+
+        else if (mapped_char != 0) {
           framebuffer_write(cursor_x, cursor_y, mapped_char, 0, 0xF);
           cursor_y++;
           if (cursor_y == 80) {
@@ -59,6 +80,8 @@ void keyboard_isr(void) {
             cursor_x++;
           }
         }
+
+      framebuffer_set_cursor(cursor_x, cursor_y);
     }
     pic_ack(IRQ_KEYBOARD);
 }

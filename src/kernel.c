@@ -4,8 +4,8 @@
 #include "lib-header/gdt.h"
 #include "lib-header/framebuffer.h"
 #include "lib-header/kernel_loader.h"
-#include "interrupt/interrupt.c"
-#include "interrupt/idt.c"
+#include "interrupt/interrupt.h"
+#include "interrupt/idt.h"
 
 // void kernel_setup(void) {
 //     enter_protected_mode(&_gdt_gdtr);

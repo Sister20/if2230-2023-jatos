@@ -26,7 +26,8 @@ clean:
 
 
 kernel:
-	@$(ASM) $(AFLAGS) $(SOURCE_FOLDER)/kernel_loader.s -o $(OUTPUT_FOLDER)/kernel_loader.o
+	$(ASM) $(AFLAGS) $(SOURCE_FOLDER)/kernel_loader.s -o $(OUTPUT_FOLDER)/kernel_loader.o
+	$(ASM) $(AFLAGS) $(SOURCE_FOLDER)/interrupt/intsetup.s -o $(OUTPUT_FOLDER)/intsetup.o
 	@$(CC) $(CFLAGS) $(SOURCE_FOLDER)/kernel.c -o $(OUTPUT_FOLDER)/kernel.o
 	@$(CC) $(CFLAGS) $(SOURCE_FOLDER)/portio.c -o $(OUTPUT_FOLDER)/portio.o
 	@$(CC) $(CFLAGS) $(SOURCE_FOLDER)/stdmem.c -o $(OUTPUT_FOLDER)/stdmem.o
@@ -34,7 +35,7 @@ kernel:
 	@$(CC) $(CFLAGS) $(SOURCE_FOLDER)/gdt.c -o $(OUTPUT_FOLDER)/gdt.o
 	@$(CC) $(CFLAGS) $(SOURCE_FOLDER)/interrupt/interrupt.c -o $(OUTPUT_FOLDER)/interrupt.o
 	@$(CC) $(CFLAGS) $(SOURCE_FOLDER)/interrupt/idt.c -o $(OUTPUT_FOLDER)/idt.o
-	@$(LIN) $(LFLAGS) $(OUTPUT_FOLDER)/kernel_loader.o $(OUTPUT_FOLDER)/kernel.o $(OUTPUT_FOLDER)/portio.o $(OUTPUT_FOLDER)/stdmem.o $(OUTPUT_FOLDER)/gdt.o $(OUTPUT_FOLDER)/framebuffer.o $(OUTPUT_FOLDER)/interrupt.o $(OUTPUT_FOLDER)/idt.o -o $(OUTPUT_FOLDER)/kernel 
+	@$(LIN) $(LFLAGS) $(OUTPUT_FOLDER)/kernel_loader.o $(OUTPUT_FOLDER)/kernel.o $(OUTPUT_FOLDER)/portio.o $(OUTPUT_FOLDER)/stdmem.o $(OUTPUT_FOLDER)/gdt.o $(OUTPUT_FOLDER)/framebuffer.o $(OUTPUT_FOLDER)/interrupt.o $(OUTPUT_FOLDER)/idt.o  $(OUTPUT_FOLDER)/intsetup.o -o $(OUTPUT_FOLDER)/kernel 
 	@echo Linking object files and generate elf32...
 	@rm -f *.o
 

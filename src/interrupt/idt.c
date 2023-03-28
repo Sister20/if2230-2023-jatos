@@ -12,12 +12,16 @@ struct IDT interrupt_descriptor_table = {
         .gate_32 = 0,
         ._r_bit_3 = 0,
         .privilege = 0,
-        .present = 0,
         .valid_bit = 0,
         .offset_high = 0
       }
     },
     .size = sizeof(struct IDT) - 1
+};
+
+struct IDTR _idt_idtr = {
+    .limit = sizeof(struct IDT) -1,
+    .base = &interrupt_descriptor_table
 };
 
 void initialize_idt(void) {

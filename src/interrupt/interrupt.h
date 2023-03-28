@@ -2,6 +2,7 @@
 #define _INTERRUPT_H
 
 #include "../lib-header/stdtype.h"
+#include "../lib-header/portio.h"
 
 /* -- PIC constants -- */
 

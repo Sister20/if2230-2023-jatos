@@ -2,6 +2,8 @@
 #include "../lib-header/portio.h"
 
 void activate_keyboard_interrupt(void) {
+    out(PIC1_DATA, PIC_DISABLE_ALL_MASK ^ (1 << IRQ_KEYBOARD));
+    out(PIC2_DATA, PIC_DISABLE_ALL_MASK);
 }
 
 void io_wait(void) {
@@ -51,6 +53,5 @@ void main_interrupt_handler(
     __attribute__((unused)) struct InterruptStack info
 ) {
     switch (int_number) {
-
     }
 }

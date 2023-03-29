@@ -2,7 +2,7 @@
 #define _FAT32_H
 
 #include "disk.h"
-#include "stdtype.h"
+#include "../lib-header/stdtype.h"
 
 
 /**
@@ -245,5 +245,9 @@ int8_t write(struct FAT32DriverRequest request);
  * @return Error code: 0 success - 1 not found - 2 folder is not empty - -1 unknown
  */
 int8_t delete(struct FAT32DriverRequest request);
+
+struct FAT32DirectoryEntry *find_directory_entry(struct FAT32DirectoryTable *dir_table, char *name, char *ext);
+struct FAT32DirectoryEntry *create_directory_entry(struct FAT32DirectoryTable *dir_table, char *name, char *ext);
+uint32_t allocate_cluster(void);
 
 #endif

@@ -70,33 +70,44 @@ void keyboard_isr(void) {
         
         // handle backspace
         if (mapped_char == '\b') {
-          if (cursor_y > 0) {
-              if (keyboard_state.buffer_index > 0) {
-                  keyboard_state.buffer_index--;
-                  framebuffer_write(cursor_x, cursor_y-1, 0, 0xF, 0);
-                  cursor_y--;
-                  if (MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y) * 2] != 0) {
-                      
-                      for (int i = keyboard_state.buffer_index; i < MAX_KEYBOARD_BUFFER; i++) {
-                          char c = keyboard_state.keyboard_buffer[i];
-                          if (c != 0) {
-                              framebuffer_write(cursor_x, cursor_y, c, 0xF, 0);
-                              cursor_y++;
-                          }
-                          else {
-                              break;
-                          }
-                      }
-                  }
-              }
-          } else if (cursor_x > 0) {
-              keyboard_state.buffer_index = 0;
-              get_last_line_idx(&cursor_x, &cursor_y);
-              framebuffer_write(cursor_x, cursor_y, 0, 0xF, 0);
-          }
-      }
-
-
+            if (cursor_y > 0) {
+                keyboard_state.buffer_index--;
+                if (MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y - 1) * 2] != 0) {
+                    for (int i = cursor_y - 1; i < 79; i++) {
+                        char c = MEMORY_FRAMEBUFFER[(cursor_x * 80 + i + 1) * 2];
+                        if (c != 0) {
+                            framebuffer_write(cursor_x, i, c, 0xF, 0);
+                            framebuffer_write(cursor_x, i+1, 0, 0xF, 0);
+                        } else {
+                            break;
+                        }
+                    }
+                    framebuffer_write(cursor_x, 79, 0, 0xF, 0);
+                } else {
+                    framebuffer_write(cursor_x, cursor_y-1, 0, 0xF, 0);
+                }
+                cursor_y--;
+            } else if (cursor_x > 0) {
+                keyboard_state.buffer_index = 0;
+                if (MEMORY_FRAMEBUFFER[((cursor_x-1)*80 + 79)*2] != 0) {
+                    for (int i = 0; i < 80; i++) {
+                        char c = MEMORY_FRAMEBUFFER[((cursor_x)*80 + i)*2];
+                        if (c != 0) {
+                            framebuffer_write(cursor_x-1, i, c, 0xF, 0);
+                            framebuffer_write(cursor_x, i, 0, 0xF, 0);
+                        } else {
+                            break;
+                        }
+                    }
+                    cursor_x--;
+                    cursor_y = 79;
+                } else {
+                    get_last_line_idx(&cursor_x, &cursor_y);
+                    framebuffer_write(cursor_x, cursor_y, 0, 0xF, 0);
+                }
+            }
+        }
+        
         // handle enter
         else if (mapped_char == '\n') {
             keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = 0;

@@ -38,7 +38,8 @@ kernel:
 	@$(CC) $(CFLAGS) $(SOURCE_FOLDER)/interrupt/idt.c -o $(OUTPUT_FOLDER)/idt.o
 	@$(CC) $(CFLAGS) $(SOURCE_FOLDER)/keyboard/keyboard.c -o $(OUTPUT_FOLDER)/keyboard.o
 	@$(CC) $(CFLAGS) $(SOURCE_FOLDER)/filesystem/disk.c -o $(OUTPUT_FOLDER)/disk.o
-	@$(LIN) $(LFLAGS) $(OUTPUT_FOLDER)/kernel_loader.o $(OUTPUT_FOLDER)/kernel.o $(OUTPUT_FOLDER)/portio.o $(OUTPUT_FOLDER)/stdmem.o $(OUTPUT_FOLDER)/gdt.o $(OUTPUT_FOLDER)/framebuffer.o $(OUTPUT_FOLDER)/interrupt.o $(OUTPUT_FOLDER)/idt.o  $(OUTPUT_FOLDER)/intsetup.o  $(OUTPUT_FOLDER)/keyboard.o $(OUTPUT_FOLDER)/disk.o -o $(OUTPUT_FOLDER)/kernel 
+	@$(CC) $(CFLAGS) $(SOURCE_FOLDER)/filesystem/fat32.c -o $(OUTPUT_FOLDER)/fat32.o
+	@$(LIN) $(LFLAGS) $(OUTPUT_FOLDER)/kernel_loader.o $(OUTPUT_FOLDER)/kernel.o $(OUTPUT_FOLDER)/portio.o $(OUTPUT_FOLDER)/stdmem.o $(OUTPUT_FOLDER)/gdt.o $(OUTPUT_FOLDER)/framebuffer.o $(OUTPUT_FOLDER)/interrupt.o $(OUTPUT_FOLDER)/idt.o  $(OUTPUT_FOLDER)/intsetup.o  $(OUTPUT_FOLDER)/keyboard.o $(OUTPUT_FOLDER)/disk.o $(OUTPUT_FOLDER)/fat32.o -o $(OUTPUT_FOLDER)/kernel 
 	@echo Linking object files and generate elf32...
 	@rm -f *.o
 

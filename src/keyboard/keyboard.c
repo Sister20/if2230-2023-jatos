@@ -60,6 +60,37 @@ void get_last_line_idx(uint8_t* curX, uint8_t* curY) {
   (*curY) = i;
 }
 
+// Return the width of the framebuffer
+int framebuffer_get_width() {
+    return 80;
+}
+
+// Return the height of the framebuffer
+int framebuffer_get_height() {
+    return 25;
+}
+
+// Scroll the contents of the framebuffer up by one line
+void framebuffer_scroll_up() {
+    // Copy each row to the row above it
+    for (int row = 1; row < framebuffer_get_height(); row++) {
+        for (int col = 0; col < framebuffer_get_width(); col++) {
+            int prev_row = row - 1;
+            int prev_row_offset = prev_row * framebuffer_get_width() * 2;
+            int curr_row_offset = row * framebuffer_get_width() * 2;
+            MEMORY_FRAMEBUFFER[prev_row_offset + col * 2] = MEMORY_FRAMEBUFFER[curr_row_offset + col * 2];
+            MEMORY_FRAMEBUFFER[prev_row_offset + col * 2 + 1] = MEMORY_FRAMEBUFFER[curr_row_offset + col * 2 + 1];
+        }
+    }
+
+    // Clear the last row
+    int last_row_offset = (framebuffer_get_height() - 1) * framebuffer_get_width() * 2;
+    for (int col = 0; col < framebuffer_get_width(); col++) {
+        MEMORY_FRAMEBUFFER[last_row_offset + col * 2] = 0;
+        MEMORY_FRAMEBUFFER[last_row_offset + col * 2 + 1] = 0;
+    }
+}
+
 void keyboard_isr(void) {
     if (!keyboard_state.keyboard_input_on)
         keyboard_state.buffer_index = 0;
@@ -113,9 +144,27 @@ void keyboard_isr(void) {
             keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = 0;
             keyboard_state.buffer_index = 0;
             keyboard_state.keyboard_input_on = FALSE;
-            framebuffer_write(cursor_x, cursor_y, ' ', 0xF, 0);
-            cursor_y = 0;
+
+            // Check if the cursor is at the end of the screen
+            if (cursor_y == framebuffer_get_width() - 1) {
+                cursor_x++;
+                cursor_y = 0;
+            } else {
+                cursor_y++;
+            }
+
+            // If the cursor has reached the bottom of the screen, scroll the screen up
+            if (cursor_x == framebuffer_get_height()) {
+                framebuffer_scroll_up();
+                cursor_x--;
+            }
+
+            // Move the cursor to the beginning of the next line
+            if (MEMORY_FRAMEBUFFER[cursor_x * framebuffer_get_width() * 2 + cursor_y * 2] == 0) {
+                framebuffer_write(cursor_x, cursor_y, ' ', 0xF, 0);
+            }
             cursor_x++;
+            cursor_y = 0;
         }
 
         //handle normal characters

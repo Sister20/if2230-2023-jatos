@@ -74,6 +74,7 @@ void keyboard_isr(void) {
     else {
         uint8_t  scancode    = in(KEYBOARD_DATA_PORT);
         char     mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
+
         // handle backspace
         if (mapped_char == '\b') {
             if (cursor_y > 0) {
@@ -109,11 +110,13 @@ void keyboard_isr(void) {
                     cursor_x--;
                     cursor_y = 79;
                 } else {
-                    get_last_line_idx(&cursor_x, &cursor_y);
                     framebuffer_write(cursor_x, cursor_y, 0, 0xF, 0);
+                    cursor_x--;
+                    cursor_y = 79;
                 }
             }
         }
+
         // handle enter
         else if (mapped_char == '\n') {
             keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = 0;
@@ -149,7 +152,10 @@ void keyboard_isr(void) {
             keyboard_state.buffer_index++;
             framebuffer_write(cursor_x, cursor_y, mapped_char, 0xF, 0);
             cursor_y++;
-            if (cursor_y == 80) {
+            if (cursor_y == 79) {
+                framebuffer_write(cursor_x, 79, mapped_char, 0xF, 0);
+                framebuffer_set_cursor(cursor_x+1, 0);
+                cursor_x++;
                 cursor_y = 0;
             }
         }  

@@ -60,35 +60,12 @@ void get_last_line_idx(uint8_t* curX, uint8_t* curY) {
   (*curY) = i;
 }
 
-// Return the width of the framebuffer
 int framebuffer_get_width() {
     return 80;
 }
 
-// Return the height of the framebuffer
 int framebuffer_get_height() {
     return 25;
-}
-
-// Scroll the contents of the framebuffer up by one line
-void framebuffer_scroll_up() {
-    // Copy each row to the row above it
-    for (int row = 1; row < framebuffer_get_height(); row++) {
-        for (int col = 0; col < framebuffer_get_width(); col++) {
-            int prev_row = row - 1;
-            int prev_row_offset = prev_row * framebuffer_get_width() * 2;
-            int curr_row_offset = row * framebuffer_get_width() * 2;
-            MEMORY_FRAMEBUFFER[prev_row_offset + col * 2] = MEMORY_FRAMEBUFFER[curr_row_offset + col * 2];
-            MEMORY_FRAMEBUFFER[prev_row_offset + col * 2 + 1] = MEMORY_FRAMEBUFFER[curr_row_offset + col * 2 + 1];
-        }
-    }
-
-    // Clear the last row
-    int last_row_offset = (framebuffer_get_height() - 1) * framebuffer_get_width() * 2;
-    for (int col = 0; col < framebuffer_get_width(); col++) {
-        MEMORY_FRAMEBUFFER[last_row_offset + col * 2] = 0;
-        MEMORY_FRAMEBUFFER[last_row_offset + col * 2 + 1] = 0;
-    }
 }
 
 void keyboard_isr(void) {
@@ -97,8 +74,6 @@ void keyboard_isr(void) {
     else {
         uint8_t  scancode    = in(KEYBOARD_DATA_PORT);
         char     mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
-        // TODO : Implement scancode processing
-        
         // handle backspace
         if (mapped_char == '\b') {
             if (cursor_y > 0) {
@@ -118,7 +93,8 @@ void keyboard_isr(void) {
                     framebuffer_write(cursor_x, cursor_y-1, 0, 0xF, 0);
                 }
                 cursor_y--;
-            } else if (cursor_x > 0) {
+            }
+            else if (cursor_x > 0) {
                 keyboard_state.buffer_index = 0;
                 if (MEMORY_FRAMEBUFFER[((cursor_x-1)*80 + 79)*2] != 0) {
                     for (int i = 0; i < 80; i++) {
@@ -138,14 +114,12 @@ void keyboard_isr(void) {
                 }
             }
         }
-        
         // handle enter
         else if (mapped_char == '\n') {
             keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = 0;
             keyboard_state.buffer_index = 0;
             keyboard_state.keyboard_input_on = FALSE;
 
-            // Check if the cursor is at the end of the screen
             if (cursor_y == framebuffer_get_width() - 1) {
                 cursor_x++;
                 cursor_y = 0;
@@ -153,13 +127,6 @@ void keyboard_isr(void) {
                 cursor_y++;
             }
 
-            // If the cursor has reached the bottom of the screen, scroll the screen up
-            if (cursor_x == framebuffer_get_height()) {
-                framebuffer_scroll_up();
-                cursor_x--;
-            }
-
-            // Move the cursor to the beginning of the next line
             if (MEMORY_FRAMEBUFFER[cursor_x * framebuffer_get_width() * 2 + cursor_y * 2] == 0) {
                 framebuffer_write(cursor_x, cursor_y, ' ', 0xF, 0);
             }
@@ -177,19 +144,16 @@ void keyboard_isr(void) {
             }
           }
           // memasukkan karakter baru pada posisi setelah kursor
-          MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y + 1) * 2] = mapped_char;
-          MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y + 1) * 2 + 1] = 0xF;
-          keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = mapped_char;
-          keyboard_state.buffer_index++;
-          cursor_y++;
-          // cek apakah kursor berada di ujung kanan layar
-          if (cursor_y == 80) {
-            cursor_y = 0;
-            cursor_x++;
-          }
-        }
-               
-        else if (scancode == 0x48) { // arrow up    
+            framebuffer_write(cursor_x, cursor_y, mapped_char, 0, 0xF);
+            keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = mapped_char;
+            keyboard_state.buffer_index++;
+            framebuffer_write(cursor_x, cursor_y, mapped_char, 0xF, 0);
+            cursor_y++;
+            if (cursor_y == 80) {
+                cursor_y = 0;
+            }
+        }  
+        else if (scancode == EXT_SCANCODE_UP) { // arrow up    
             if (cursor_x > 0) {
                 int i;
                 for (i = cursor_y; i < 80; i++) {
@@ -210,8 +174,7 @@ void keyboard_isr(void) {
                 }
             }
         }
-
-        else if (scancode == 0x50) { // arrow down
+        else if (scancode == EXT_SCANCODE_DOWN) { // arrow down
             if (cursor_x < 24) {
               int i;
                 for (i = cursor_y; i < 80; i++) {
@@ -231,25 +194,18 @@ void keyboard_isr(void) {
                   }
                 }
             }
-        
-            
-        } else if (scancode == 0x4B) { // arrow left
+        } 
+        else if (scancode == EXT_SCANCODE_LEFT) { // arrow left
             if (cursor_y > 0) {
-                if (cursor_x == 0 && MEMORY_FRAMEBUFFER[cursor_y * 2] != 0) {
-                    int i;
-                    for (i = 79; i > 0; i--) {
-                        if (MEMORY_FRAMEBUFFER[i * 2] != 0) {
-                            cursor_y = i;
-                            break;
-                        }
-                    }
-                } else {
+               if(MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y - 1) * 2] != 0) {
                     cursor_y--;
-                }
+               } else if(MEMORY_FRAMEBUFFER[((cursor_x-1) * 80 + 79) * 2] != 0) {
+                    cursor_x--;
+                    cursor_y = 79;
+               }
             } 
         }
-
-        else if (scancode == 0x4D) { //arrow right
+        else if (scancode == EXT_SCANCODE_RIGHT) { //arrow right
             if (cursor_y < 79) {
                 if (MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y + 1) * 2] != 0) {
                     cursor_y++;
@@ -259,23 +215,7 @@ void keyboard_isr(void) {
                 }
             }
         }
-        // else if (scancode < 128) { // keyboard input
-        //     if (cursor_x < 24) {
-        //         // move characters to the right of the cursor
-        //         for (int i = 79; i > cursor_y; i--) {
-        //             MEMORY_FRAMEBUFFER[(cursor_x * 80 + i) * 2] = MEMORY_FRAMEBUFFER[(cursor_x * 80 + i - 1) * 2];
-        //             MEMORY_FRAMEBUFFER[(cursor_x * 80 + i) * 2 + 1] = MEMORY_FRAMEBUFFER[(cursor_x * 80 + i - 1) * 2 + 1];
-        //         }
-        //         // add the new character
-        //         MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y) * 2] = mapped_char;
-        //         MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y) * 2 + 1] = 0xF;
-        //         cursor_y++;
-        //     }
-        // }
-
-
-      framebuffer_set_cursor(cursor_x, cursor_y);
-      
+      framebuffer_set_cursor(cursor_x, cursor_y);  
     }
     pic_ack(IRQ_KEYBOARD);
 }

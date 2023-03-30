@@ -177,16 +177,14 @@ void keyboard_isr(void) {
             }
           }
           // memasukkan karakter baru pada posisi setelah kursor
-          MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y + 1) * 2] = mapped_char;
-          MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y + 1) * 2 + 1] = 0xF;
-          keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = mapped_char;
-          keyboard_state.buffer_index++;
-          cursor_y++;
-          // cek apakah kursor berada di ujung kanan layar
-          if (cursor_y == 80) {
-            cursor_y = 0;
-            cursor_x++;
-          }
+          framebuffer_write(cursor_x, cursor_y, mapped_char, 0, 0xF);
+            keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = mapped_char;
+            keyboard_state.buffer_index++;
+            framebuffer_write(cursor_x, cursor_y, mapped_char, 0xF, 0);
+            cursor_y++;
+            if (cursor_y == 80) {
+                cursor_y = 0;
+            }
         }
                
         else if (scancode == 0x48) { // arrow up    
@@ -235,17 +233,12 @@ void keyboard_isr(void) {
             
         } else if (scancode == 0x4B) { // arrow left
             if (cursor_y > 0) {
-                if (cursor_x == 0 && MEMORY_FRAMEBUFFER[cursor_y * 2] != 0) {
-                    int i;
-                    for (i = 79; i > 0; i--) {
-                        if (MEMORY_FRAMEBUFFER[i * 2] != 0) {
-                            cursor_y = i;
-                            break;
-                        }
-                    }
-                } else {
+               if(MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y - 1) * 2] != 0) {
                     cursor_y--;
-                }
+               } else if(MEMORY_FRAMEBUFFER[((cursor_x-1) * 80 + 79) * 2] != 0) {
+                    cursor_x--;
+                    cursor_y = 79;
+               }
             } 
         }
 

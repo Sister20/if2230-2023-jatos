@@ -1,9 +1,11 @@
 #include "../lib-header/stdtype.h"
 #include "fat32.h"
 #include "../lib-header/stdmem.h"
+#include "lib-header/framebuffer.h"
 #define NULL 0
 
 static struct FAT32DriverState driver_state;
+static struct FAT32DirectoryTable temp_table;
 
 const uint8_t fs_signature[BLOCK_SIZE] = {
     'C', 'o', 'u', 'r', 's', 'e', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',  ' ',
@@ -135,14 +137,13 @@ int8_t write(struct FAT32DriverRequest request) {
     if (clusters[0] == 0) {
         return -2;
     }
+   
 
     // Menambahkan DirectoryEntry baru dengan nama yang sesuai dari entry.user_attribute = UATTR_NOT_EMPTY
-    for (uint32_t i = 0; i < CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry); i++) {
+    for (uint32_t i = 1; i < CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry); i++) {
         if (driver_state.dir_table_buf.table[i].user_attribute != UATTR_NOT_EMPTY) {
             entry = &driver_state.dir_table_buf.table[i];
-            // memcpy(entry, &driver_state.dir_table_buf.table[i], sizeof(struct FAT32DirectoryEntry));
-            memcpy(entry->name, request.name, 8);
-            memcpy(entry->ext, request.ext, 3);
+            memcpy(entry->name, request.name, sizeof(request.name));
             entry->user_attribute = UATTR_NOT_EMPTY;
             entry->cluster_high = clusters[0] >> 16;
             entry->cluster_low = clusters[0] & 0xFFFF;
@@ -150,16 +151,22 @@ int8_t write(struct FAT32DriverRequest request) {
 
             if (request.buffer_size == 0) {
                 entry->attribute = ATTR_SUBDIRECTORY;
-                // write_clusters(&driver_state.cluster_buf, clusters[0], 1);
-                memcpy(&driver_state.dir_table_buf.table[i], entry, sizeof(struct FAT32DirectoryEntry));
-                write_clusters(&driver_state.dir_table_buf, clusters[0], 1);
+
+                //Masukin sub folder ke parent
+                write_clusters(&driver_state.dir_table_buf, current_cluster, 1);
                 driver_state.fat_table.cluster_map[clusters[0]] = FAT32_FAT_END_OF_FILE;
 
-                struct FAT32DirectoryTable new_dir_table;
-                init_directory_table(&new_dir_table, request.name, clusters[0]);
-                // init_directory_table(&driver_state.dir_table_buf, request.name, clusters[0]);
+                // Bikin directory table baru
+                read_clusters(&temp_table, clusters[0], 1);
+                init_directory_table(&temp_table,request.name, 1);
+                write_clusters(&temp_table, clusters[0], 1);
             } else {
-                // write_clusters(&driver_state.dir_table_buf, current_cluster, 1);
+                memcpy(entry->ext, request.ext, 3);
+
+                // Masukin file ke parent
+                write_clusters(&driver_state.dir_table_buf, current_cluster, 1);
+                
+                // Masukin file ke cluster
                 struct ClusterBuffer tempBuf;
                 for(uint8_t i = 0; i < cluster_count; i++){
                     if(i == cluster_count-1){
@@ -188,14 +195,16 @@ int8_t delete(struct FAT32DriverRequest request) {
     read_clusters(&driver_state.dir_table_buf, current_cluster, 1);
     read_clusters(&driver_state.fat_table, 1, 1);
 
-    for(int i=2;i<64;i++){
+    for(int i=1;i<64;i++){
         if(memcmp(driver_state.dir_table_buf.table[i].name, request.name, 8) == 0){
             // if(memcmp(driver_state.dir_table_buf.table[i].ext, request.ext, 3) == 0) {
-                driver_state.fat_table.cluster_map[3] = FAT32_FAT_EMPTY_ENTRY;
+                driver_state.dir_table_buf.table[i].user_attribute = UATTR_EMPTY;
+                driver_state.fat_table.cluster_map[i] = FAT32_FAT_EMPTY_ENTRY;
                 break;
             // }
         }
     }
+    write_clusters(&driver_state.dir_table_buf, current_cluster, 1);
     write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
 
     

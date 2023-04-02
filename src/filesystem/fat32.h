@@ -34,6 +34,7 @@
 /* -- FAT32 DirectoryEntry constants -- */
 #define ATTR_SUBDIRECTORY     0b00010000
 #define UATTR_NOT_EMPTY       0b10101010
+#define UATTR_EMPTY           0b00000000
 
 
 

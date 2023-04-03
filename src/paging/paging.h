@@ -1,7 +1,7 @@
 #ifndef _PAGING_H
 #define _PAGING_H
 
-#include "stdtype.h"
+#include "../lib-header/stdtype.h"
 
 #define PAGE_ENTRY_COUNT 1024
 #define PAGE_FRAME_SIZE  (4*1024*1024)
@@ -16,11 +16,25 @@ extern struct PageDirectory _paging_kernel_page_directory;
  * Page Directory Entry Flag, only first 8 bit
  * 
  * @param present_bit       Indicate whether this entry is exist or not
+ * @param write_bit         Indicate whether this entry is read-only or not
+ * @param user_bit   Indicate whether this entry is accessible by user or not
+ * @param page_write_through    Indicate whether this entry is write-through or not
+ * @param page_cache_disable    Indicate whether this entry is cache disable or not
+ * @param accessed            Indicate whether this entry is accessed or not
+ * @param dirty               Indicate whether this entry is dirty or not
+ * @param use_pagesize_4_mb   Indicate whether this entry is using page size 4 MB or not
  * ...
  */
 struct PageDirectoryEntryFlag {
     uint8_t present_bit        : 1;
     // TODO : Continue. Note: Only first 8 bit flags
+    uint8_t write_bit          : 1;
+    uint8_t user_bit    : 1;
+    uint8_t page_write_through : 1;
+    uint8_t page_cache_disable : 1;
+    uint8_t accessed           : 1;
+    uint8_t dirty              : 1;
+    uint8_t use_pagesize_4_mb  : 1;
 } __attribute__((packed));
 
 /**
@@ -35,6 +49,8 @@ struct PageDirectoryEntry {
     struct PageDirectoryEntryFlag flag;
     uint16_t global_page    : 1;
     // TODO : Continue, Use uint16_t + bitfield here, Do not use uint8_t
+    uint16_t reserved           : 3;
+    uint16_t lower_address;
 } __attribute__((packed));
 
 /**
@@ -48,7 +64,8 @@ struct PageDirectoryEntry {
  */
 struct PageDirectory {
     // TODO : Implement
-} __attribute__((packed));
+    struct PageDirectoryEntry table[1024];
+} __attribute__((aligned(0x1000)));
 
 /**
  * Containing page driver states

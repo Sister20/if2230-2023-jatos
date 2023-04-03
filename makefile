@@ -19,6 +19,7 @@ DISK_NAME      = storage
 
 run: all 
 	@qemu-system-i386 -s -S -cdrom $(OUTPUT_FOLDER)/$(ISO_NAME).iso
+# @qemu-img create -f raw $(OUTPUT_FOLDER)/$(DISK_NAME).bin 4M
 all: build
 build: iso
 clean:
@@ -39,7 +40,8 @@ kernel:
 	@$(CC) $(CFLAGS) $(SOURCE_FOLDER)/keyboard/keyboard.c -o $(OUTPUT_FOLDER)/keyboard.o
 	@$(CC) $(CFLAGS) $(SOURCE_FOLDER)/filesystem/disk.c -o $(OUTPUT_FOLDER)/disk.o
 	@$(CC) $(CFLAGS) $(SOURCE_FOLDER)/filesystem/fat32.c -o $(OUTPUT_FOLDER)/fat32.o
-	@$(LIN) $(LFLAGS) $(OUTPUT_FOLDER)/kernel_loader.o $(OUTPUT_FOLDER)/kernel.o $(OUTPUT_FOLDER)/portio.o $(OUTPUT_FOLDER)/stdmem.o $(OUTPUT_FOLDER)/gdt.o $(OUTPUT_FOLDER)/framebuffer.o $(OUTPUT_FOLDER)/interrupt.o $(OUTPUT_FOLDER)/idt.o  $(OUTPUT_FOLDER)/intsetup.o  $(OUTPUT_FOLDER)/keyboard.o $(OUTPUT_FOLDER)/disk.o $(OUTPUT_FOLDER)/fat32.o -o $(OUTPUT_FOLDER)/kernel 
+	@$(CC) $(CFLAGS) $(SOURCE_FOLDER)/paging/paging.c -o $(OUTPUT_FOLDER)/paging.o
+	@$(LIN) $(LFLAGS) $(OUTPUT_FOLDER)/kernel_loader.o $(OUTPUT_FOLDER)/kernel.o $(OUTPUT_FOLDER)/portio.o $(OUTPUT_FOLDER)/stdmem.o $(OUTPUT_FOLDER)/gdt.o $(OUTPUT_FOLDER)/framebuffer.o $(OUTPUT_FOLDER)/interrupt.o $(OUTPUT_FOLDER)/idt.o  $(OUTPUT_FOLDER)/intsetup.o  $(OUTPUT_FOLDER)/keyboard.o $(OUTPUT_FOLDER)/disk.o $(OUTPUT_FOLDER)/fat32.o $(OUTPUT_FOLDER)/paging.o -o $(OUTPUT_FOLDER)/kernel 
 	@echo Linking object files and generate elf32...
 	@rm -f *.o
 
@@ -51,5 +53,6 @@ iso: kernel
 	@genisoimage -R -b boot/grub/grub1 -no-emul-boot -boot-load-size 4 -A os -input-charset utf8 -quiet -boot-info-table -o OS2023.iso bin/iso
 	@rm -r $(OUTPUT_FOLDER)/iso/
 # @qemu-system-i386 -s -cdrom OS2023.iso 
+	@qemu-img create -f raw $(OUTPUT_FOLDER)/$(DISK_NAME).bin 4M
 	@qemu-system-i386 -s -drive file=$(OUTPUT_FOLDER)/storage.bin,format=raw,if=ide,index=0,media=disk -cdrom OS2023.iso
 

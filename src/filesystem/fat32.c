@@ -1,7 +1,7 @@
 #include "../lib-header/stdtype.h"
 #include "fat32.h"
 #include "../lib-header/stdmem.h"
-#include "lib-header/framebuffer.h"
+#include "../lib-header/framebuffer.h"
 #define NULL 0
 
 static struct FAT32DriverState driver_state;
@@ -199,13 +199,45 @@ int8_t delete(struct FAT32DriverRequest request) {
         if(memcmp(driver_state.dir_table_buf.table[i].name, request.name, 8) == 0){
             // if(memcmp(driver_state.dir_table_buf.table[i].ext, request.ext, 3) == 0) {
                 driver_state.dir_table_buf.table[i].user_attribute = UATTR_EMPTY;
-                driver_state.fat_table.cluster_map[i] = FAT32_FAT_EMPTY_ENTRY;
                 break;
             // }
         }
     }
     write_clusters(&driver_state.dir_table_buf, current_cluster, 1);
-    write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
+
+    for(int i=2;i<64;i++){
+        read_clusters(&driver_state.dir_table_buf,i,1);
+        if(/*memcmp(driver_state.dir_table_buf.table[0].name, request.name, 8) == 0*/i==3){
+            if(driver_state.dir_table_buf.table[0].attribute == ATTR_SUBDIRECTORY){
+                driver_state.fat_table.cluster_map[i] = FAT32_FAT_EMPTY_ENTRY;
+                write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
+                break;
+            }else{
+                // if(memcmp(driver_state.dir_table_buf.table[0].ext, request.ext, 8) == 0){                
+                    uint32_t temp = driver_state.fat_table.cluster_map[i];
+                    uint32_t temp2;
+                    driver_state.fat_table.cluster_map[i] = FAT32_FAT_EMPTY_ENTRY;
+                    write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
+                    if(temp==FAT32_FAT_END_OF_FILE){
+                        break;
+                    }else{
+                        do{
+                            read_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
+                            temp2 = driver_state.fat_table.cluster_map[temp];
+                            driver_state.fat_table.cluster_map[temp] = FAT32_FAT_EMPTY_ENTRY;
+                            temp = driver_state.fat_table.cluster_map[temp2];
+                            write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
+                        }while(temp!=FAT32_FAT_END_OF_FILE);
+                        driver_state.fat_table.cluster_map[temp2] = FAT32_FAT_EMPTY_ENTRY;
+                        write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
+                        break;
+                    }
+                // }
+                
+            }
+            break;
+        }
+    }
 
     
   

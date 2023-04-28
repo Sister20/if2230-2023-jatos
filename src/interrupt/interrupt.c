@@ -6,7 +6,11 @@
 #include "../keyboard/keyboard.h"
 #include "../filesystem/fat32.h"
 
-struct TSSEntry _interrupt_tss_entry;
+struct TSSEntry _interrupt_tss_entry = {
+    .ss0  = GDT_KERNEL_DATA_SEGMENT_SELECTOR,
+};
+
+
 
 void activate_keyboard_interrupt(void) {
     out(PIC1_DATA, PIC_DISABLE_ALL_MASK ^ (1 << IRQ_KEYBOARD));
@@ -62,19 +66,19 @@ void set_tss_kernel_current_stack(void) {
     _interrupt_tss_entry.esp0 = stack_ptr + 8; 
 }
 
-struct TSSEntry _interrupt_tss_entry = {
-    .ss0  = GDT_KERNEL_DATA_SEGMENT_SELECTOR,
-};
 
-void puts(char *str, uint32_t row, uint32_t col) {
-    uint32_t i = 0;
-    while (str[i] != '\0') {
-        framebuffer_write(row, col + i, str[i], 0x0F, 0x00);
-        i++;
+void puts(char *str, uint32_t len, uint8_t color, uint8_t row, uint8_t col) {
+    framebuffer_set_cursor(row, col);
+    for (uint32_t i = 0; i < len; i++) {
+        framebuffer_write(row, i + col, str[i], color, 0);
     }
+    framebuffer_set_cursor(row, col + len);
 }
 
+
 void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info) {
+    uint8_t row=0, col=0;
+    // framebuffer_write(0, 0, cpu.eax+48, 0x0F, 0x00);
     if (cpu.eax == 0) {
         struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
         *((int8_t*) cpu.ecx) = read(request);
@@ -86,17 +90,28 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         get_keyboard_buffer(buf);
         memcpy((char *) cpu.ebx, buf, cpu.ecx);
     } else if (cpu.eax == 5) {
-        puts((char *) cpu.ebx, cpu.ecx, cpu.edx); // Modified puts() on kernel side
+        puts((char *) cpu.ebx, cpu.ecx, cpu.edx, row, col); // Modified puts() on kernel side
     }
 }
 
 void main_interrupt_handler(struct CPURegister cpu, uint32_t int_number, struct InterruptStack info) {
+    // framebuffer_write(1, 0, cpu.eax+48, 0x0F, 0x00);
+    // framebuffer_write(2, 0, int_number, 0x0F, 0x00);
+    // framebuffer_write(3, 0, 0xE, 0x0F, 0x00);
+    // int_number = 0x30;
+
     switch (int_number) {
         case PIC1_OFFSET + IRQ_KEYBOARD:
             keyboard_isr();
             break;
         case 0x30:
+            framebuffer_write(3, 0, 0xE, 0x0F, 0x00);
             syscall(cpu, info);
+            break;
+        case 0x0E:
+            __asm__("hlt");
+            break;
+        default:
             break;
     }
 }

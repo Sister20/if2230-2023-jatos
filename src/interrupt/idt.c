@@ -1,4 +1,6 @@
 #include "idt.h"
+#include "../keyboard/keyboard.h"
+#include "../filesystem/fat32.h"
 
 // create IDT table
 struct IDT interrupt_descriptor_table = {
@@ -34,8 +36,11 @@ void initialize_idt(void) {
    * Segment: GDT_KERNEL_CODE_SEGMENT_SELECTOR
    * Privilege: 0
    */
-   for (int i = 0; i < ISR_STUB_TABLE_LIMIT; i++) {
+   for (int i = 0; i < 0x30; i++) {
        set_interrupt_gate(i, isr_stub_table[i], GDT_KERNEL_CODE_SEGMENT_SELECTOR, 0);
+   }
+   for (int i = 0x30; i <= 0x3F; i++) {
+         set_interrupt_gate(i, isr_stub_table[i], GDT_KERNEL_CODE_SEGMENT_SELECTOR, 0x3);
    }
     __asm__ volatile("lidt %0" : : "m"(_idt_idtr));
     __asm__ volatile("sti");

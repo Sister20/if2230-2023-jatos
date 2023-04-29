@@ -68,7 +68,6 @@ void set_tss_kernel_current_stack(void) {
 
 
 void puts(char *str, uint32_t len, uint8_t color, uint8_t row, uint8_t col) {
-    framebuffer_set_cursor(row, col);
     for (uint32_t i = 0; i < len; i++) {
         framebuffer_write(row, i + col, str[i], color, 0);
     }
@@ -77,12 +76,19 @@ void puts(char *str, uint32_t len, uint8_t color, uint8_t row, uint8_t col) {
 
 
 void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptStack info) {
-    uint8_t row=0, col=0;
-    // framebuffer_write(0, 0, cpu.eax+48, 0x0F, 0x00);
+    uint8_t row, col;
+    framebuffer_get_cursor(&row, &col);
     if (cpu.eax == 0) {
         struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
         *((int8_t*) cpu.ecx) = read(request);
-    } else if (cpu.eax == 4) {
+    }else if (cpu.eax == 1){
+
+    }else if (cpu.eax == 2){
+
+    }else if (cpu.eax == 3){
+
+    }
+    else if (cpu.eax == 4) {
         keyboard_state_activate();
         __asm__("sti"); // Due IRQ is disabled when main_interrupt_handler() called
         while (is_keyboard_blocking());
@@ -91,12 +97,26 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         memcpy((char *) cpu.ebx, buf, cpu.ecx);
     } else if (cpu.eax == 5) {
         puts((char *) cpu.ebx, cpu.ecx, cpu.edx, row, col); // Modified puts() on kernel side
+    } else if (cpu.eax == 6){
+       framebuffer_clear();
+       framebuffer_set_cursor(-1, 0);
+    } else if (cpu.eax == 7){
+        framebuffer_set_cursor(row+1, 0);
+    } else if (cpu.eax == 8){
+        struct FAT32DirectoryTable dir_table;
+        read_clusters(&dir_table, ROOT_CLUSTER_NUMBER, 1);
+        int i = 1;
+        while(TRUE){
+            if(dir_table.table[i].name[0] == 0x00) break;
+            puts(dir_table.table[i].name, 8, 0x0F, i, 0);
+            i++;
+        }
     }
 }
 
 void main_interrupt_handler(struct CPURegister cpu, uint32_t int_number, struct InterruptStack info) {
     // framebuffer_write(1, 0, cpu.eax+48, 0x0F, 0x00);
-    // framebuffer_write(2, 0, int_number, 0x0F, 0x00);
+    // framebuffer_write(20, 0, int_number, 0x0F, 0x00);
     // framebuffer_write(3, 0, 0xE, 0x0F, 0x00);
     // int_number = 0x30;
 
@@ -105,7 +125,6 @@ void main_interrupt_handler(struct CPURegister cpu, uint32_t int_number, struct 
             keyboard_isr();
             break;
         case 0x30:
-            framebuffer_write(3, 0, 0xE, 0x0F, 0x00);
             syscall(cpu, info);
             break;
         case 0x0E:

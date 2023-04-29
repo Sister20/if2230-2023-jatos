@@ -3,7 +3,6 @@
 #include "../lib-header/stdmem.h"
 #include "../lib-header/framebuffer.h"
 #define NULL 0
-
 static struct FAT32DriverState driver_state;
 static struct FAT32DirectoryTable temp_table;
 
@@ -60,9 +59,8 @@ int8_t read(struct FAT32DriverRequest request) {
     }
 
     uint32_t cluster_number = (entry->cluster_high << 16) | entry->cluster_low;
-    uint8_t cluster_count = entry->filesize / CLUSTER_SIZE + ((entry->filesize % CLUSTER_SIZE) != 0);
+    uint8_t cluster_count = entry->filesize / CLUSTER_SIZE;
     read_clusters(request.buf, cluster_number, cluster_count);
-
     return 0;
 }
 
@@ -174,8 +172,8 @@ int8_t write(struct FAT32DriverRequest request) {
                     }else{
                         driver_state.fat_table.cluster_map[clusters[i]] = FAT32_FAT_EMPTY_ENTRY+clusters[i+1];
                     }
-                    // memcpy(tempBuf.buf, request.buf+(i*CLUSTER_SIZE), CLUSTER_SIZE);  // Kalo pake ini jadi ABCDE
-                    memcpy(tempBuf.buf, request.buf, CLUSTER_SIZE);    // Kalo pake ini jadi A doang
+                    memcpy(tempBuf.buf, request.buf+(i*CLUSTER_SIZE), CLUSTER_SIZE);  // Kalo pake ini jadi ABCDE
+                    // memcpy(tempBuf.buf, request.buf, CLUSTER_SIZE);    // Kalo pake ini jadi A doang
                     write_clusters(&tempBuf, clusters[i], 1);
                 }
             }

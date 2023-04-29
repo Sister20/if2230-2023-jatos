@@ -27,3 +27,13 @@ void framebuffer_clear(void) {
         MEMORY_FRAMEBUFFER[i + 1] = 0x07;
     }
 }
+
+void framebuffer_get_cursor(uint8_t* row, uint8_t* col) {
+    out(CURSOR_PORT_CMD, 0x0F);
+    uint16_t pos_low = in(CURSOR_PORT_DATA);
+    out(CURSOR_PORT_CMD, 0x0E);
+    uint16_t pos_high = in(CURSOR_PORT_DATA);
+    uint16_t pos = (pos_high << 8) | pos_low;
+    *row = pos / 80;
+    *col = pos % 80;
+}

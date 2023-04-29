@@ -110,12 +110,17 @@ void kernel_setup(void) {
 
     // Allocate first 4 MiB virtual memory
     allocate_single_user_page_frame((uint8_t*) 0);
+     struct ClusterBuffer cbuf[1];
+    for (uint32_t i = 0; i < 1; i++)
+        for (uint32_t j = 0; j < 3; j++)
+            cbuf[i].buf[j] = i + 'a';
 
     struct FAT32DriverRequest ppp = {
+        .buf                   = cbuf,
         .name                  = "ikanaide",
         .ext                   = "uwu",
         .parent_cluster_number = ROOT_CLUSTER_NUMBER,
-        .buffer_size           = 0,
+        .buffer_size           = CLUSTER_SIZE,
     } ;
 
     write(ppp);  // Create folder "ikanaide"

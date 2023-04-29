@@ -84,7 +84,7 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
     }else if (cpu.eax == 1){
 
     }else if (cpu.eax == 2){
-
+        
     }else if (cpu.eax == 3){
 
     }
@@ -103,12 +103,15 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
     } else if (cpu.eax == 7){
         framebuffer_set_cursor(row+1, 0);
     } else if (cpu.eax == 8){
+        // struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
         struct FAT32DirectoryTable dir_table;
-        read_clusters(&dir_table, ROOT_CLUSTER_NUMBER, 1);
+        // puts(, 4, 0x0F, row, 0);
+        // framebuffer_write(10, 0, request.parent_cluster_number, 0x0F, 0x00);
+        read_clusters(&dir_table, 2, 1);
         int i = 1;
         while(TRUE){
             if(dir_table.table[i].name[0] == 0x00) break;
-            puts(dir_table.table[i].name, 8, 0x0F, i, 0);
+            puts(dir_table.table[i].name, 8, 0x0F, row, 8*(i-1));
             i++;
         }
     }

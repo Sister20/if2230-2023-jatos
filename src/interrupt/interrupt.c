@@ -10,7 +10,13 @@ struct TSSEntry _interrupt_tss_entry = {
     .ss0  = GDT_KERNEL_DATA_SEGMENT_SELECTOR,
 };
 
-
+uint8_t len_char(char str[8]){
+    uint8_t i = 0;
+    while(str[i] != '\0'){
+        i++;
+    }
+    return i;
+}
 
 void activate_keyboard_interrupt(void) {
     out(PIC1_DATA, PIC_DISABLE_ALL_MASK ^ (1 << IRQ_KEYBOARD));
@@ -110,7 +116,7 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         read_clusters(&dir_table, cpu.ebx, 1);
         for(int i=1;i<64;i++){
             if(dir_table.table[i].name[0] != 0){
-                puts(dir_table.table[i].name, 10, 0x0F, row+i-1, 0);
+                puts(dir_table.table[i].name, len_char(dir_table.table[i].name), 0x0F, row+i-1, 0);
             }
         }
     } else if (cpu.eax == 9) {

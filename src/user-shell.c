@@ -49,25 +49,26 @@ void read_buf(uint32_t buf){
     }else if(memcmp((char*)buf, "cat ", 4) == 0){
         char* name = (char*)buf + 4;
         struct FAT32DriverRequest request = {
-            .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+            .parent_cluster_number = current_cluster,
             .buffer_size           = 0x100000,
     
         };
         memcpy(request.name, name, 8);
-        memcpy(request.ext, name + 8 + 1, 3);
+        memcpy(request.ext, name + 8, 3);
         uint32_t retcode;
 
         syscall(0, (uint32_t)&request, (uint32_t)&retcode, 0);
         // syscall(5, (uint32_t)name, 8, 0xF);
         if(retcode == 0){
-
-            uint8_t* file_content = request.buf;
-            uint32_t filesize = 1000;
+            struct ClusterBuffer tempBuf;
+            // char* file_content = request.buf;
+            memcpy(&tempBuf, request.buf, sizeof(struct ClusterBuffer));
+            uint32_t filesize = CLUSTER_SIZE;
             for(uint32_t i=0; i<filesize; i++){
-                if(file_content[i] == '\n'){
-                    syscall(5, (uint32_t)"\r", 1, 0xF); 
-                }
-                syscall(5, (uint32_t)&file_content[i], 1, 0XF);
+                // if(file_content[i] == '\n'){
+                //     syscall(5, (uint32_t)"\r", 1, 0xF); 
+                // }
+                syscall(5, (uint32_t)&tempBuf.buf[i], 1, 0XF);
             }
             // puts(request.buf, 1000, 0xF);
 
@@ -98,7 +99,7 @@ void read_buf(uint32_t buf){
     }else if(memcmp((char*)buf, "clear", 5) == 0 || memcmp((char*)buf, "clear ", 6) == 0){
         syscall(6, 0, 0, 0);
     }else{
-        syscall(5, (uint32_t) buf,10 , 0xF);
+        syscall(5, (uint32_t) buf, len_char((char*)buf), 0xF);
         syscall(5, (uint32_t)": command not found", 20, 0xF);
     }
 }

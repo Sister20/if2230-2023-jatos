@@ -53,42 +53,18 @@ void keyboard_isr(void) {
 
         if (mapped_char == '\b') {
             if (cursor_y > 0) {
-                keyboard_state.buffer_index--;
                 cursor_y--;
-                if (MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y) * 2] != 0) {
-                    for (int i = cursor_y; i < 79; i++) {
-                        char c = MEMORY_FRAMEBUFFER[(cursor_x * 80 + i + 1) * 2];
-                        if (c != 0) {
-                            framebuffer_write(cursor_x, i, c, 0xF, 0);
-                            framebuffer_write(cursor_x, i+1, 0, 0xF, 0);
-                        } else {
-                            break;
-                        }
-                    }
-                    framebuffer_write(cursor_x, cursor_y, 0, 0xF, 0);
-                } else {
-                    framebuffer_write(cursor_x, cursor_y, 0, 0xF, 0);
-                }
+                MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y) * 2] = ' ';
+                MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y) * 2 + 1] = 0xF;
+                keyboard_state.buffer_index--;
             }
+            // kondisi di line ke-2 atau lebih agar kembali ke line pertama
             else if (cursor_x > 0) {
-                keyboard_state.buffer_index = 0;
-                if (MEMORY_FRAMEBUFFER[((cursor_x-1)*80 + 79)*2] != 0) {
-                    for (int i = 0; i < 80; i++) {
-                        char c = MEMORY_FRAMEBUFFER[((cursor_x)*80 + i)*2];
-                        if (c != 0) {
-                            framebuffer_write(cursor_x-1, i, c, 0xF, 0);
-                            framebuffer_write(cursor_x, i, 0, 0xF, 0);
-                        } else {
-                            break;
-                        }
-                    }
-                    cursor_x--;
-                    cursor_y = 79;
-                } else {
-                    framebuffer_write(cursor_x, cursor_y, 0, 0xF, 0);
-                    cursor_x--;
-                    cursor_y = 79;
-                }
+                cursor_x--;
+                cursor_y = 79;
+                MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y) * 2] = ' ';
+                MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y) * 2 + 1] = 0xF;
+                keyboard_state.buffer_index--;
             }
         }
 

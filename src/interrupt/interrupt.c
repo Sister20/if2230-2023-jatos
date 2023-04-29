@@ -82,11 +82,14 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
         struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
         *((int8_t*) cpu.ecx) = read(request);
     }else if (cpu.eax == 1){
-
+        struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
+        *((int8_t*) cpu.ecx) = read_directory(request);
     }else if (cpu.eax == 2){
-        
+        struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
+        *((int8_t*) cpu.ecx) = write(request);
     }else if (cpu.eax == 3){
-
+        struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
+        *((int8_t*) cpu.ecx) = delete(request);
     }
     else if (cpu.eax == 4) {
         keyboard_state_activate();
@@ -103,16 +106,33 @@ void syscall(struct CPURegister cpu, __attribute__((unused)) struct InterruptSta
     } else if (cpu.eax == 7){
         framebuffer_set_cursor(row+1, 0);
     } else if (cpu.eax == 8){
-        // struct FAT32DriverRequest request = *(struct FAT32DriverRequest*) cpu.ebx;
         struct FAT32DirectoryTable dir_table;
-        // puts(, 4, 0x0F, row, 0);
-        // framebuffer_write(10, 0, request.parent_cluster_number, 0x0F, 0x00);
-        read_clusters(&dir_table, 2, 1);
-        int i = 1;
-        while(TRUE){
-            if(dir_table.table[i].name[0] == 0x00) break;
-            puts(dir_table.table[i].name, 8, 0x0F, row, 8*(i-1));
+        read_clusters(&dir_table, cpu.ebx, 1);
+        for(int i=1;i<64;i++){
+            if(dir_table.table[i].name[0] != 0){
+                puts(dir_table.table[i].name, 10, 0x0F, row+i-1, 0);
+            }
+        }
+    } else if (cpu.eax == 9) {
+        if (memcmp((char *) cpu.ebx, "..", 2) == 0) {
+
+        }
+        else {
+            struct FAT32DirectoryTable dir_table;
+            read_clusters(&dir_table, *((int8_t*) cpu.edx), 1);
+            uint32_t len = 0;
+            while(((char *)cpu.ebx)[len] != '\0') len++;
+            int i = 1;
+            while(TRUE){
+            if(dir_table.table[i].name[0] == '\0') break;
+            if (memcmp(dir_table.table[i].name, (char *) cpu.ebx, len) == 0) {
+                *((int8_t*) cpu.edx) = (dir_table.table[i].cluster_high << 16 | dir_table.table[i].cluster_low);
+                puts("Berhasil pindah direktori ", 26, 0x0F, row, 0);
+                puts(dir_table.table[i].name, 8, 0x0F, row, 26);
+                break;
+            }
             i++;
+        }
         }
     }
 }

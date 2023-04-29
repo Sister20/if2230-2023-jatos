@@ -111,6 +111,15 @@ void kernel_setup(void) {
     // Allocate first 4 MiB virtual memory
     allocate_single_user_page_frame((uint8_t*) 0);
 
+    struct FAT32DriverRequest ppp = {
+        .name                  = "ikanaide",
+        .ext                   = "uwu",
+        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+        .buffer_size           = 0,
+    } ;
+
+    write(ppp);  // Create folder "ikanaide"
+
     // Write shell into memory
     struct FAT32DriverRequest request = {
         .buf                   = (uint8_t*) 0,

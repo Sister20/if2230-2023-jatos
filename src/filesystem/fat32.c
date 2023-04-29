@@ -227,6 +227,8 @@ int8_t delete(struct FAT32DriverRequest request) {
                 if(memcmp(driver_state.dir_table_buf.table[i].ext, request.ext, 3) == 0) {
                     driver_state.dir_table_buf.table[i].user_attribute = UATTR_EMPTY;
                     fatNumber = (driver_state.dir_table_buf.table[i].cluster_high << 16) | driver_state.dir_table_buf.table[i].cluster_low;
+                    memcpy(driver_state.dir_table_buf.table[i].name, "\0\0\0\0\0\0\0\0", 8);
+                    memcpy(driver_state.dir_table_buf.table[i].ext, "\0\0\0", 3);
                     write_clusters(&driver_state.dir_table_buf, current_cluster, 1);
                     break;
                 }

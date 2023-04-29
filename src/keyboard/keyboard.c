@@ -58,7 +58,7 @@ void keyboard_isr(void) {
                 MEMORY_FRAMEBUFFER[(cursor_x * 80 + cursor_y) * 2 + 1] = 0xF;
                 keyboard_state.buffer_index--;
             }
-            // kondisi di line ke-2 atau lebih agar kembali ke line pertama
+            // kondisi di line ke-2 atau lebih agar kembali ke line sebelumnya
             else if (cursor_x > 0) {
                 cursor_x--;
                 cursor_y = 79;
